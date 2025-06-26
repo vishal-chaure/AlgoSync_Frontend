@@ -7,13 +7,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { X, Plus, Trash2 } from 'lucide-react';
-import { questionsAPI } from '../lib/api';
+import { questionsAPI, parseQuestionContent } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
 
 const AddQuestion = () => {
   const { isLoggedIn } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [parsingLoading, setParsingLoading] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -162,440 +163,48 @@ const AddQuestion = () => {
     setFormData(prev => ({ ...prev, title: updatedTitle }));
   };
 
-  const parseContent = (content: string) => {
-    const lines = content.split('\n').filter(line => line.trim());
-
-    if (lines.length > 0) {
-      // Extract question number first
-      let extractedNumber = '';
-      for (const line of lines) {
-        // Look for patterns like "1.", "Problem 1:", "Q1:", etc.
-        const numberMatch = line.match(/^(?:Problem\s*)?(?:Q\s*)?(\d+)[\.\s:]/i);
-        if (numberMatch) {
-          extractedNumber = numberMatch[1];
-          break;
-        }
-        // Also check for numbers in brackets or parentheses
-        const bracketMatch = line.match(/[\[\(](\d+)[\]\)]/);
-        if (bracketMatch) {
-          extractedNumber = bracketMatch[1];
-          break;
-        }
+  const handlePasteAnalysis = async () => {
+    if (!pastedContent.trim()) return;
+    
+    setParsingLoading(true);
+    try {
+      const parsedData = await parseQuestionContent(pastedContent);
+      
+      // Update form data with parsed results
+      const generatedLeetCodeUrl = generateLeetCodeUrl(parsedData.title);
+      
+      setFormData(prev => ({
+        ...prev,
+        title: parsedData.title || prev.title,
+        description: parsedData.description || prev.description,
+        difficulty: parsedData.difficulty || prev.difficulty,
+        questionNumber: parsedData.questionNumber || prev.questionNumber,
+        platformLink: parsedData.platformLink || generatedLeetCodeUrl,
+        platformTag: parsedData.platformTag || (generatedLeetCodeUrl ? 'LeetCode' : 'Other'),
+        youtubeLink: parsedData.youtubeLink || prev.youtubeLink
+      }));
+      
+      // Update examples and constraints
+      if (parsedData.examples && parsedData.examples.length > 0) {
+        setExamples(parsedData.examples);
       }
-
-      // Extract title - look for the actual question title
-      const titleLine = lines.find(line =>
-        line.match(/^\d+\.\s+/) ||
-        (line.toLowerCase().includes('jump') || 
-         line.toLowerCase().includes('sum') ||
-         line.toLowerCase().includes('array') ||
-         line.toLowerCase().includes('string') ||
-         line.toLowerCase().includes('tree') ||
-         line.toLowerCase().includes('graph') ||
-         line.toLowerCase().includes('linked') ||
-         line.toLowerCase().includes('stack') ||
-         line.toLowerCase().includes('queue') ||
-         line.toLowerCase().includes('heap') ||
-         line.toLowerCase().includes('binary') ||
-         line.toLowerCase().includes('sort') ||
-         line.toLowerCase().includes('search') ||
-         line.toLowerCase().includes('dynamic') ||
-         line.toLowerCase().includes('greedy') ||
-         line.toLowerCase().includes('backtrack') ||
-         line.toLowerCase().includes('recursion') ||
-         line.toLowerCase().includes('math') ||
-         line.toLowerCase().includes('bit') ||
-         line.toLowerCase().includes('trie') ||
-         line.toLowerCase().includes('union') ||
-         line.toLowerCase().includes('sliding') ||
-         line.toLowerCase().includes('two pointer')) &&
-        !line.toLowerCase().includes('example') && 
-        !line.toLowerCase().includes('input') && 
-        !line.toLowerCase().includes('output') &&
-        !line.toLowerCase().includes('constraint') &&
-        !line.toLowerCase().includes('note') &&
-        !line.toLowerCase().includes('solved') &&
-        !line.toLowerCase().includes('medium') &&
-        !line.toLowerCase().includes('easy') &&
-        !line.toLowerCase().includes('hard') &&
-        !line.toLowerCase().includes('topics') &&
-        !line.toLowerCase().includes('companies') &&
-        !line.toLowerCase().includes('premium') &&
-        !line.toLowerCase().includes('lock') &&
-        !line.toLowerCase().includes('icon') &&
-        !line.toLowerCase().includes('seen') &&
-        !line.toLowerCase().includes('interview') &&
-        !line.toLowerCase().includes('accepted') &&
-        !line.toLowerCase().includes('acceptance') &&
-        !line.toLowerCase().includes('rate') &&
-        line.length > 5
-      );
-
-      if (titleLine) {
-        const cleanTitle = titleLine
-          .replace(/^\d+\.\s*/, '')
-          .replace(/^Problem\s*:?\s*/i, '')
-          .replace(/^Q\d*\s*:?\s*/i, '')
-          .trim();
-        
-        // Update title with question number if available
-        const finalTitle = extractedNumber ? 
-          updateTitleWithNumber(cleanTitle, extractedNumber) : cleanTitle;
-        setFormData(prev => ({ 
-          ...prev, 
-          title: finalTitle,
-          questionNumber: extractedNumber || prev.questionNumber
-        }));
+      
+      if (parsedData.constraints && parsedData.constraints.length > 0) {
+        setConstraints(parsedData.constraints);
       }
-
-      // Extract difficulty - look for difficulty indicators
-      const contentLower = content.toLowerCase();
-      let extractedDifficulty = '';
-      if (contentLower.includes('easy')) {
-        extractedDifficulty = 'Easy';
-      } else if (contentLower.includes('medium')) {
-        extractedDifficulty = 'Medium';
-      } else if (contentLower.includes('hard')) {
-        extractedDifficulty = 'Hard';
+      
+      // Update suggested tags
+      if (parsedData.suggestedTags && parsedData.suggestedTags.length > 0) {
+        setExtractedTags(parsedData.suggestedTags);
+        setSelectedTags(parsedData.suggestedTags); // Auto-select all extracted tags
       }
-
-      if (extractedDifficulty) {
-        setFormData(prev => ({ ...prev, difficulty: extractedDifficulty }));
-      }
-
-      // Extract description - filter out UI elements and metadata
-      let descriptionLines = [];
-      let foundExamples = false;
-      let foundConstraints = false;
-      let foundTopics = false;
-      let titleFound = false;
-
-      for (const line of lines) {
-        const lineLower = line.toLowerCase();
-        
-        // Skip UI elements and metadata
-        if (lineLower.includes('solved') ||
-            lineLower.includes('companies') ||
-            lineLower.includes('premium') ||
-            lineLower.includes('lock') ||
-            lineLower.includes('icon') ||
-            lineLower.includes('seen') ||
-            lineLower.includes('interview') ||
-            lineLower.includes('accepted') ||
-            lineLower.includes('acceptance') ||
-            lineLower.includes('rate') ||
-            lineLower.includes('yes') ||
-            lineLower.includes('no') ||
-            lineLower.includes('1/5') ||
-            lineLower.includes('1,746,908') ||
-            lineLower.includes('4.2m') ||
-            lineLower.includes('41.5%')) {
-          continue;
-        }
-
-        // Mark when we find the title
-        if (titleLine && line.includes(titleLine.replace(/^\d+\.\s*/, '').replace(/^Problem\s*:?\s*/i, '').replace(/^Q\d*\s*:?\s*/i, ''))) {
-          titleFound = true;
-          continue;
-        }
-
-        // Stop when we hit examples, constraints, or topics
-        if (lineLower.includes('example') ||
-          lineLower.includes('constraint') ||
-          lineLower.includes('input:') ||
-          lineLower.includes('output:') ||
-          lineLower.includes('note:') ||
-          lineLower.includes('follow-up') ||
-          lineLower.includes('topics:')) {
-          foundExamples = true;
-          break;
-        }
-        
-        // Only add lines after title is found and before examples/constraints
-        if (titleFound && 
-            line.trim().length > 0 &&
-            !line.match(/^\d+\.\s+/) && 
-            !lineLower.includes('problem:') &&
-            !lineLower.includes('easy') &&
-            !lineLower.includes('medium') &&
-            !lineLower.includes('hard') &&
-            !lineLower.includes('difficulty') &&
-            !lineLower.includes('tags:') &&
-            !lineLower.includes('categories:')) {
-          descriptionLines.push(line);
-        }
-      }
-
-      if (descriptionLines.length > 0) {
-        const description = descriptionLines.join('\n').trim();
-        setFormData(prev => ({ ...prev, description }));
-      } else {
-        // Fallback: if no description found, use content between title and examples
-        const titleIndex = lines.findIndex(line => 
-          line.includes(titleLine?.replace(/^\d+\.\s*/, '').replace(/^Problem\s*:?\s*/i, '').replace(/^Q\d*\s*:?\s*/i, '') || '')
-        );
-        
-        if (titleIndex !== -1) {
-          const exampleIndex = lines.findIndex((line, index) => 
-            index > titleIndex && 
-            (line.toLowerCase().includes('example') || line.toLowerCase().includes('constraint'))
-          );
-          
-          const endIndex = exampleIndex !== -1 ? exampleIndex : lines.length;
-          const fallbackDescription = lines
-            .slice(titleIndex + 1, endIndex)
-            .filter(line => 
-              line.trim().length > 0 &&
-              !line.toLowerCase().includes('easy') &&
-              !line.toLowerCase().includes('medium') &&
-              !line.toLowerCase().includes('hard') &&
-              !line.toLowerCase().includes('difficulty') &&
-              !line.toLowerCase().includes('tags:') &&
-              !line.toLowerCase().includes('categories:')
-            )
-            .join('\n')
-            .trim();
-          
-          if (fallbackDescription) {
-            setFormData(prev => ({ ...prev, description: fallbackDescription }));
-          }
-        }
-      }
-
-      // Extract examples
-      const extractedExamples = [];
-      let currentExample = '';
-      let inExample = false;
-
-      for (const line of lines) {
-        if (line.toLowerCase().includes('example')) {
-          if (currentExample.trim() && inExample) {
-            extractedExamples.push(currentExample.trim());
-          }
-          currentExample = line + '\n';
-          inExample = true;
-        } else if (line.toLowerCase().includes('constraint') ||
-          line.toLowerCase().includes('note:') ||
-          line.toLowerCase().includes('follow-up')) {
-          if (currentExample.trim() && inExample) {
-            extractedExamples.push(currentExample.trim());
-          }
-          inExample = false;
-          break;
-        } else if (inExample) {
-          currentExample += line + '\n';
-        }
-      }
-
-      if (currentExample.trim() && inExample) {
-        extractedExamples.push(currentExample.trim());
-      }
-
-      setExamples(extractedExamples);
-
-      // Extract constraints
-      const extractedConstraints = [];
-      let inConstraints = false;
-
-      for (const line of lines) {
-        if (line.toLowerCase().includes('constraint')) {
-          inConstraints = true;
-          continue;
-        }
-        if (inConstraints) {
-          if (line.toLowerCase().includes('note:') ||
-            line.toLowerCase().includes('follow-up') ||
-            line.toLowerCase().includes('example')) {
-            break;
-          }
-          if (line.trim() && (line.includes('≤') || line.includes('<=') || line.includes('>=') || line.match(/\d+/))) {
-            extractedConstraints.push(line.trim());
-          }
-        }
-      }
-
-      setConstraints(extractedConstraints);
-
-      // Enhanced tag detection - specifically look for Topics section
-      const detectedTags = [];
-
-      // Look for Topics section specifically
-      let inTopicsSection = false;
-      for (const line of lines) {
-        const lineLower = line.toLowerCase();
-        
-        if (lineLower.includes('topics')) {
-          inTopicsSection = true;
-          continue;
-        }
-        
-        if (inTopicsSection) {
-          // Stop when we hit another section
-          if (lineLower.includes('companies') || 
-              lineLower.includes('seen') || 
-              lineLower.includes('interview') ||
-              lineLower.includes('accepted') ||
-              lineLower.includes('acceptance')) {
-            break;
-          }
-          
-          // Extract tags from the topics section
-          const tagMatch = line.match(/^([A-Za-z\s]+)$/);
-          if (tagMatch && tagMatch[1].trim()) {
-            const tag = tagMatch[1].trim();
-            const matchingTag = commonTags.find(commonTag => 
-              commonTag.toLowerCase() === tag.toLowerCase()
-            );
-            if (matchingTag) {
-              detectedTags.push(matchingTag);
-            }
-          }
-        }
-      }
-
-      // Also check for explicit tags in the content
-      const explicitTags = contentLower.match(/(?:tags?|categories?|topics?):\s*([^\n]+)/i);
-      if (explicitTags) {
-        const tagList = explicitTags[1].split(/[,;]/).map(tag => tag.trim());
-        tagList.forEach(tag => {
-          const matchingTag = commonTags.find(commonTag => 
-            commonTag.toLowerCase() === tag.toLowerCase()
-          );
-          if (matchingTag && !detectedTags.includes(matchingTag)) {
-            detectedTags.push(matchingTag);
-          }
-        });
-      }
-
-      // Algorithm-based detection as fallback
-      commonTags.forEach(tag => {
-        const tagLower = tag.toLowerCase();
-        if (contentLower.includes(tagLower) ||
-          contentLower.includes(tagLower.replace(' ', '')) ||
-          contentLower.includes(tagLower.replace(' ', '-'))) {
-          if (!detectedTags.includes(tag)) {
-            detectedTags.push(tag);
-          }
-        }
-      });
-
-      // Pattern-based detection
-      if (contentLower.includes('two pointer') || (contentLower.includes('left') && contentLower.includes('right'))) {
-        if (!detectedTags.includes('Two Pointers')) {
-          detectedTags.push('Two Pointers');
-        }
-      }
-      if (contentLower.includes('sliding window') || (contentLower.includes('subarray') && contentLower.includes('window'))) {
-        if (!detectedTags.includes('Sliding Window')) {
-          detectedTags.push('Sliding Window');
-        }
-      }
-      if (contentLower.includes('binary search') || contentLower.includes('sorted array')) {
-        if (!detectedTags.includes('Binary Search')) {
-          detectedTags.push('Binary Search');
-        }
-      }
-      if (contentLower.includes('dp') || contentLower.includes('dynamic programming') || contentLower.includes('memoization')) {
-        if (!detectedTags.includes('Dynamic Programming')) {
-          detectedTags.push('Dynamic Programming');
-        }
-      }
-      if (contentLower.includes('graph') || (contentLower.includes('node') && contentLower.includes('edge'))) {
-        if (!detectedTags.includes('Graph')) {
-          detectedTags.push('Graph');
-        }
-      }
-      if (contentLower.includes('tree') || contentLower.includes('binary tree') || contentLower.includes('root')) {
-        if (!detectedTags.includes('Tree')) {
-          detectedTags.push('Tree');
-        }
-      }
-      if (contentLower.includes('backtrack') || contentLower.includes('recursion')) {
-        if (!detectedTags.includes('Backtracking')) {
-          detectedTags.push('Backtracking');
-        }
-      }
-      if (contentLower.includes('greedy') || contentLower.includes('optimal')) {
-        if (!detectedTags.includes('Greedy')) {
-          detectedTags.push('Greedy');
-        }
-      }
-      if (contentLower.includes('sort') || contentLower.includes('sorted')) {
-        if (!detectedTags.includes('Sorting')) {
-          detectedTags.push('Sorting');
-        }
-      }
-      if (contentLower.includes('hash') || contentLower.includes('map') || contentLower.includes('dictionary')) {
-        if (!detectedTags.includes('Hash Table')) {
-          detectedTags.push('Hash Table');
-        }
-      }
-      if (contentLower.includes('stack') || contentLower.includes('queue')) {
-        if (!detectedTags.includes('Stack')) {
-          detectedTags.push('Stack');
-        }
-        if (!detectedTags.includes('Queue')) {
-          detectedTags.push('Queue');
-        }
-      }
-      if (contentLower.includes('linked list') || contentLower.includes('node.next')) {
-        if (!detectedTags.includes('Linked List')) {
-          detectedTags.push('Linked List');
-        }
-      }
-      if (contentLower.includes('heap') || contentLower.includes('priority queue')) {
-        if (!detectedTags.includes('Heap')) {
-          detectedTags.push('Heap');
-        }
-      }
-      if (contentLower.includes('trie') || contentLower.includes('prefix tree')) {
-        if (!detectedTags.includes('Trie')) {
-          detectedTags.push('Trie');
-        }
-      }
-      if (contentLower.includes('union find') || contentLower.includes('disjoint set')) {
-        if (!detectedTags.includes('Union Find')) {
-          detectedTags.push('Union Find');
-        }
-      }
-      // More specific Bit Manipulation detection to avoid false positives
-      if (contentLower.includes('bit manipulation') || 
-          contentLower.includes('bitwise') || 
-          contentLower.includes('xor') || 
-          contentLower.includes('bitwise and') || 
-          contentLower.includes('bitwise or') || 
-          contentLower.includes('bitwise xor') ||
-          contentLower.includes('left shift') ||
-          contentLower.includes('right shift') ||
-          contentLower.includes('bit mask') ||
-          contentLower.includes('bit mask') ||
-          (contentLower.includes('bit') && (
-            contentLower.includes('operation') ||
-            contentLower.includes('manipulation') ||
-            contentLower.includes('xor') ||
-            contentLower.includes('and') ||
-            contentLower.includes('or') ||
-            contentLower.includes('shift')
-          ))) {
-        if (!detectedTags.includes('Bit Manipulation')) {
-          detectedTags.push('Bit Manipulation');
-        }
-      }
-      if (contentLower.includes('math') || contentLower.includes('arithmetic') || contentLower.includes('modulo')) {
-        if (!detectedTags.includes('Math')) {
-          detectedTags.push('Math');
-        }
-      }
-
-      const uniqueTags = [...new Set(detectedTags)];
-      setExtractedTags(uniqueTags);
-      setSelectedTags([]);
-    }
-  };
-
-  const handlePasteAnalysis = () => {
-    if (pastedContent.trim()) {
-      parseContent(pastedContent);
+      
+      toast.success('Question details extracted successfully!');
+    } catch (error) {
+      console.error('Error parsing question:', error);
+      toast.error('Failed to parse question content. Please try again.');
+    } finally {
+      setParsingLoading(false);
     }
   };
 
@@ -735,6 +344,21 @@ const AddQuestion = () => {
     }
   };
 
+  // Helper function to generate LeetCode URL from title
+  const generateLeetCodeUrl = (title: string) => {
+    if (!title) return '';
+    
+    // Convert title to kebab-case
+    const kebabCase = title
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '') // Remove special characters except spaces and hyphens
+      .replace(/\s+/g, '-') // Replace spaces with hyphens
+      .replace(/-+/g, '-') // Replace multiple hyphens with single hyphen
+      .trim();
+    
+    return `https://leetcode.com/problems/${kebabCase}/`;
+  };
+
   return (
     <motion.div
       className="max-w-4xl mx-auto space-y-6 px-4 sm:px-6"
@@ -759,9 +383,10 @@ const AddQuestion = () => {
           <Button
             type="button"
             onClick={handlePasteAnalysis}
+            disabled={parsingLoading}
             className="mt-2 glass-light border-blue-500/30 text-blue-400 hover:bg-blue-500/20"
           >
-            Extract Question Details
+            {parsingLoading ? 'Extracting...' : 'Extract Question Details'}
           </Button>
         </div>
 
@@ -880,10 +505,10 @@ const AddQuestion = () => {
           {extractedTags.length > 0 && (
             <div>
               <label className="block text-sm font-medium mb-2 text-gray-300">
-                Select Tags (Extracted from content)
+                Tags (Extracted from content)
               </label>
               <p className="text-xs text-gray-400 mb-3">
-                Select the relevant tags for this question:
+                All relevant tags have been automatically selected:
               </p>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">

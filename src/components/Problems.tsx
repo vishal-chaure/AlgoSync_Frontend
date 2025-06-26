@@ -8,6 +8,7 @@ import { Question } from '../types/Question';
 import { questionsAPI } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface ProblemsProps {
   onQuestionSelect: (question: Question) => void;
@@ -25,6 +26,8 @@ const Problems = ({ onQuestionSelect, hasLeftPanel = false, hasRightPanel = fals
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('added');
   const [filterBy, setFilterBy] = useState<FilterOption>('all');
+  const [selected, setSelected] = useState<string[]>([]);
+  const [deleteMode, setDeleteMode] = useState(false);
 
   // Fetch questions
   const fetchQuestions = async () => {
@@ -135,6 +138,33 @@ const Problems = ({ onQuestionSelect, hasLeftPanel = false, hasRightPanel = fals
     }
   };
 
+  const isAllSelected = filteredAndSortedQuestions.length > 0 && selected.length === filteredAndSortedQuestions.length;
+  const isIndeterminate = selected.length > 0 && selected.length < filteredAndSortedQuestions.length;
+
+  const handleSelectAll = () => {
+    if (isAllSelected) {
+      setSelected([]);
+    } else {
+      setSelected(filteredAndSortedQuestions.map(q => q.id));
+    }
+  };
+
+  const handleSelect = (id: string) => {
+    setSelected(prev => prev.includes(id) ? prev.filter(qid => qid !== id) : [...prev, id]);
+  };
+
+  const handleDeleteSelected = async () => {
+    if (selected.length === 0) return;
+    try {
+      await Promise.all(selected.map(id => questionsAPI.deleteQuestion(id)));
+      setSelected([]);
+      fetchQuestions();
+      toast.success('Selected questions deleted');
+    } catch (error) {
+      toast.error('Failed to delete selected questions');
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -225,6 +255,51 @@ const Problems = ({ onQuestionSelect, hasLeftPanel = false, hasRightPanel = fals
         </div>
       </motion.div>
 
+      {/* Delete Questions Button (only show when not in delete mode) */}
+      {!deleteMode && (
+        <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.1 }}
+          className="inline-block mb-2"
+        >
+          <Button
+            onClick={() => setDeleteMode(true)}
+            className="bg-red-700 hover:bg-red-900 text-white px-3 py-1 text-xs rounded"
+          >
+            Delete Questions
+          </Button>
+        </motion.div>
+      )}
+
+      {/* Select All & Delete Selected Controls (only show in delete mode) */}
+      {deleteMode && (
+        <div className="flex items-center space-x-4 mb-2">
+          <Checkbox
+            checked={isAllSelected}
+            indeterminate={isIndeterminate}
+            onCheckedChange={handleSelectAll}
+            className="mr-4 border-gray-600"
+            aria-label="Select all questions"
+          />
+          <span className="text-sm text-gray-300">Select All</span>
+          <Button
+            onClick={handleDeleteSelected}
+            disabled={selected.length === 0}
+            className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 text-xs rounded"
+          >
+            Delete Selected
+          </Button>
+          <Button
+            onClick={() => { setDeleteMode(false); setSelected([]); }}
+            className="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 text-xs rounded"
+          >
+            Cancel
+          </Button>
+          <span className="text-xs text-gray-400">{selected.length} selected</span>
+        </div>
+      )}
+
       {/* Problems List */}
       <motion.div
         className="space-y-3 overflow-x-hidden"
@@ -243,102 +318,114 @@ const Problems = ({ onQuestionSelect, hasLeftPanel = false, hasRightPanel = fals
           filteredAndSortedQuestions.map((question, index) => (
             <motion.div
               key={question.id}
-              className="glass-light rounded-lg p-4 hover:bg-white/10 transition-colors cursor-pointer overflow-hidden"
-              whileHover={{ scale: 1.01 }}
-              whileTap={{ scale: 0.99 }}
+              className="glass-light rounded-lg p-4 hover:bg-white/5 transition-colors cursor-pointer overflow-hidden flex items-center"
+              // whileHover={{ scale: 1.01 }}
+              // whileTap={{ scale: 0.99 }}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: index * 0.05 }}
               onClick={() => onQuestionSelect(question)}
             >
-              <div className="flex items-center justify-between min-w-0">
-                {/* Left side - Title and metadata */}
-                <div className="flex items-center space-x-4 flex-1 min-w-0 overflow-hidden">
-                  <h3 className={`font-semibold truncate ${
-                    hasLeftPanel && hasRightPanel ? 'text-sm' : 
-                    hasLeftPanel || hasRightPanel ? 'text-base' : 'text-lg'
-                  }`}>{question.title}</h3>
-                  
-                  <span className={`px-2 py-1 rounded text-xs font-medium flex-shrink-0 ${
-                    question.difficulty === 'Easy' ? 'bg-green-500/20 text-green-400' :
-                    question.difficulty === 'Medium' ? 'bg-yellow-500/20 text-yellow-400' :
-                    'bg-red-500/20 text-red-400'
-                  }`}>
-                    {question.difficulty}
-                  </span>
-                  
-                  <span className="text-xs text-gray-400 bg-gray-500/20 px-2 py-1 rounded flex-shrink-0">
-                    {question.topic}
-                  </span>
-                  
-                  <div className="flex space-x-1 flex-shrink-0">
-                    {question.topicTags.slice(0, 2).map((tag) => (
-                      <span key={tag} className="px-2 py-1 bg-blue-500/20 text-blue-400 rounded text-xs">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
+              {deleteMode && (
+                <div onClick={e => e.stopPropagation()}>
+                  <Checkbox
+                    checked={selected.includes(question.id)}
+                    onCheckedChange={() => handleSelect(question.id)}
+                    className="mr-4 flex-shrink-0 border-gray-600 "
+                    aria-label={`Select question ${question.title}`}
+                  />
                 </div>
+              )}
+              <div className="flex-1">
+                <div className="flex items-center justify-between min-w-0">
+                  {/* Left side - Title and metadata */}
+                  <div className="flex items-center space-x-4 flex-1 min-w-0 overflow-hidden">
+                    <h3 className={`font-semibold truncate ${
+                      hasLeftPanel && hasRightPanel ? 'text-sm' : 
+                      hasLeftPanel || hasRightPanel ? 'text-base' : 'text-lg'
+                    }`}>{question.title}</h3>
+                    
+                    <span className={`px-2 py-1 rounded text-xs font-medium flex-shrink-0 ${
+                      question.difficulty === 'Easy' ? 'bg-green-500/20 text-green-400' :
+                      question.difficulty === 'Medium' ? 'bg-yellow-500/20 text-yellow-400' :
+                      'bg-red-500/20 text-red-400'
+                    }`}>
+                      {question.difficulty}
+                    </span>
+                    
+                    <span className="text-xs text-gray-400 bg-gray-500/20 px-2 py-1 rounded flex-shrink-0">
+                      {question.topic}
+                    </span>
+                    
+                    <div className="flex space-x-1 flex-shrink-0">
+                      {question.topicTags.slice(0, 2).map((tag) => (
+                        <span key={tag} className="px-2 py-1 bg-blue-500/20 text-blue-400 rounded text-xs">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
 
-                {/* Right side - Actions */}
-                <div className="flex items-center space-x-3 flex-shrink-0">
-                  {question.platformLink && (
-                    <motion.a
-                      href={question.platformLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-gray-400 hover:text-blue-400 transition-colors"
+                  {/* Right side - Actions */}
+                  <div className="flex items-center space-x-3 flex-shrink-0">
+                    {question.platformLink && (
+                      <motion.a
+                        href={question.platformLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-gray-400 hover:text-blue-400 transition-colors"
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <ExternalLink size={18} />
+                      </motion.a>
+                    )}
+                    
+                    {question.youtubeLink && (
+                      <motion.a
+                        href={question.youtubeLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-gray-400 hover:text-red-400 transition-colors"
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Youtube size={18} />
+                      </motion.a>
+                    )}
+                    
+                    <motion.button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleStar(question.id);
+                      }}
+                      className="text-gray-400 hover:text-yellow-400 transition-colors p-2 rounded-lg hover:bg-yellow-500/10"
                       whileHover={{ scale: 1.1 }}
                       whileTap={{ scale: 0.9 }}
-                      onClick={(e) => e.stopPropagation()}
                     >
-                      <ExternalLink size={18} />
-                    </motion.a>
-                  )}
-                  
-                  {question.youtubeLink && (
-                    <motion.a
-                      href={question.youtubeLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-gray-400 hover:text-red-400 transition-colors"
+                      <Star 
+                        size={18} 
+                        className={question.isImportant ? 'text-yellow-400 fill-current' : 'text-gray-400'} 
+                      />
+                    </motion.button>
+                    
+                    <motion.button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleCompleted(question.id);
+                      }}
+                      className="text-gray-400 hover:text-green-400 transition-colors p-2 rounded-lg hover:bg-green-500/10"
                       whileHover={{ scale: 1.1 }}
                       whileTap={{ scale: 0.9 }}
-                      onClick={(e) => e.stopPropagation()}
                     >
-                      <Youtube size={18} />
-                    </motion.a>
-                  )}
-                  
-                  <motion.button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleStar(question.id);
-                    }}
-                    className="text-gray-400 hover:text-yellow-400 transition-colors p-2 rounded-lg hover:bg-yellow-500/10"
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                  >
-                    <Star 
-                      size={18} 
-                      className={question.isImportant ? 'text-yellow-400 fill-current' : 'text-gray-400'} 
-                    />
-                  </motion.button>
-                  
-                  <motion.button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleCompleted(question.id);
-                    }}
-                    className="text-gray-400 hover:text-green-400 transition-colors p-2 rounded-lg hover:bg-green-500/10"
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                  >
-                    <CheckCircle 
-                      size={18} 
-                      className={question.isSolved ? 'text-green-400 fill-current' : 'text-gray-400'} 
-                    />
-                  </motion.button>
+                      <CheckCircle 
+                        size={18} 
+                        className={question.isSolved ? 'text-green-400 fill-current' : 'text-gray-400'} 
+                      />
+                    </motion.button>
+                  </div>
                 </div>
               </div>
             </motion.div>

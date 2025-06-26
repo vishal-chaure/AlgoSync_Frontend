@@ -42,7 +42,7 @@ const QuestionDetailPanel = ({ question, onClose, onShowChatbot, onQuestionDelet
       animate={{ x: 0 }}
       exit={{ x: '100%' }}
       transition={{ type: 'spring', damping: 25, stiffness: 120 }}
-      className="fixed right-0 top-0 h-full w-full sm:w-[650px] z-50"
+      className="fixed right-0 top-0 h-full w-2/5  z-50" //sm:w-[650px]
     >
       <div className="h-full glass-strong border-l border-white/10 flex flex-col backdrop-blur-xl">
         {/* Header */}
@@ -131,10 +131,10 @@ const QuestionDetailPanel = ({ question, onClose, onShowChatbot, onQuestionDelet
           <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 pt-2">
             <Button
               onClick={onShowChatbot}
-              className="bg-blue-500 hover:bg-blue-600 text-white flex items-center text-xs px-3 py-2 w-full sm:w-auto"
+              className="glass-strong hover:glass-light text-white flex items-center text-sm px-3 py-2 w-full sm:w-auto"
             >
               <Code size={14} className="mr-1" />
-              AI Assistant
+              AlgoSync AI
             </Button>
           </div>
 

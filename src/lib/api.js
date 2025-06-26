@@ -1,4 +1,5 @@
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://algosync-backend-production.up.railway.app/api';
+// const API_BASE_URL = 'http://localhost:5000/api';
 
 // Helper function to get auth token
 const getAuthToken = () => {
@@ -27,13 +28,9 @@ const apiRequest = async (endpoint, options = {}) => {
     ...options,
   };
 
-  console.log('API Request:', `${API_BASE_URL}${endpoint}`, config);
-
   try {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
     const data = await response.json();
-
-    console.log('API Response:', response.status, data);
 
     if (!response.ok) {
       throw new Error(data.message || 'Something went wrong');
@@ -149,6 +146,14 @@ export const questionsAPI = {
   getStats: async () => {
     return await apiRequest('/questions/stats/overview');
   },
+
+  // Save code for a question
+  saveCode: async (id, code) => {
+    return await apiRequest(`/questions/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ savedCode: code }),
+    });
+  },
 };
 
 // Notes API
@@ -198,6 +203,26 @@ export const notesAPI = {
     return await apiRequest(`/notes/search?q=${encodeURIComponent(query)}`);
   },
 };
+
+export async function aiChat({ messages, question, language }) {
+  const res = await fetch('/api/ai/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ messages, question, language })
+  });
+  if (!res.ok) throw new Error('AI chat failed');
+  return res.json();
+}
+
+export async function parseQuestionContent(content) {
+  const res = await fetch('/api/ai/parse-question', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ content })
+  });
+  if (!res.ok) throw new Error('Question parsing failed');
+  return res.json();
+}
 
 export default {
   auth: authAPI,

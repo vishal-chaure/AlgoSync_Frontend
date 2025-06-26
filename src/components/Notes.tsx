@@ -226,10 +226,10 @@ const Notes = () => {
           <div className="space-y-2 max-h-96 overflow-y-auto">
             <AnimatePresence>
               {filteredNotes.map((note) => (
-                <motion.div
+    <motion.div
                   key={note._id}
                   initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
+      animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   className={`glass-light rounded-lg p-3 cursor-pointer transition-all hover:bg-white/10 ${
                     selectedNote?._id === note._id ? 'ring-2 ring-blue-500' : ''
@@ -271,7 +271,7 @@ const Notes = () => {
         <div className="glass-strong rounded-xl p-6 h-full">
           {isCreating ? (
             // Create New Note
-            <div className="space-y-4">
+        <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-blue-400">Create New Note</h3>
                 <div className="flex space-x-2">
@@ -301,7 +301,7 @@ const Notes = () => {
                 className="glass-light border-gray-600 text-white placeholder:text-gray-400"
               />
 
-              <Textarea
+          <Textarea
                 value={newNote.content}
                 onChange={(e) => setNewNote({ ...newNote, content: e.target.value })}
                 placeholder="Start writing your note..."
@@ -428,8 +428,8 @@ const Notes = () => {
                 >
                   <Plus size={16} className="mr-1" />
                   Create Your First Note
-                </Button>
-              </div>
+            </Button>
+          </div>
             </div>
           )}
         </div>

@@ -26,10 +26,28 @@ const Navbar = ({ activeTab, setActiveTab, isLoggedIn }: NavbarProps) => {
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-8">
           <motion.div
-            className="text-xl font-bold text-blue-400"
+            className="flex items-center"
             whileHover={{ scale: 1.05 }}
           >
-            DSA Manager
+            {/* AlgoSync Logo */}
+            <img 
+              src="/algosync-logo.png" 
+              alt="AlgoSync" 
+              className="h-12 pb-1 pl-5 w-auto"
+              onError={(e) => {
+                // Fallback to text if image fails to load
+                const target = e.currentTarget as HTMLImageElement;
+                const fallback = target.nextElementSibling as HTMLElement;
+                target.style.display = 'none';
+                if (fallback) {
+                  fallback.style.display = 'block';
+                }
+              }}
+            />
+            {/* Fallback text */}
+            {/* <span className="text-xl font-bold text-blue-400 hidden">
+              AlgoSync
+            </span> */}
           </motion.div>
           
           <div className="flex items-center space-x-6">

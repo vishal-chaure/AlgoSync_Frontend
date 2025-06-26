@@ -211,9 +211,12 @@ const Dashboard = ({ onQuestionSelect, hasLeftPanel = false, hasRightPanel = fal
           </div>
         ) : (
           topics.map((topic) => (
+            
             <div key={topic.name} className="glass rounded-xl overflow-hidden" onClick={(event) => handleTopicContainerClick(event, topic.name)}>
+              
+              {/* DropDown Menu */}
               <motion.div
-                className="w-full p-4 flex items-center justify-between hover:bg-white/5 transition-colors cursor-pointer topic-header"
+                className="w-full p-4 flex items-center justify-between hover:bg-black/5 transition-colors cursor-pointer topic-header"
                 animate={{
                   fontSize: hasLeftPanel && hasRightPanel ? '14px' : hasLeftPanel || hasRightPanel ? '16px' : '20px'
                 }}
@@ -230,6 +233,8 @@ const Dashboard = ({ onQuestionSelect, hasLeftPanel = false, hasRightPanel = fal
                 </div>
               </motion.div>
 
+
+              {/* Inside Dropdown Menu */}
               <AnimatePresence>
                 {topic.isExpanded && (
                   <motion.div
