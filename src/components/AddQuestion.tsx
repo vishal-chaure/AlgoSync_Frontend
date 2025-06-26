@@ -173,8 +173,8 @@ const AddQuestion = () => {
       // Update form data with parsed results
       const generatedLeetCodeUrl = generateLeetCodeUrl(parsedData.title);
       
-      setFormData(prev => ({
-        ...prev,
+        setFormData(prev => ({ 
+          ...prev, 
         title: parsedData.title || prev.title,
         description: parsedData.description || prev.description,
         difficulty: parsedData.difficulty || prev.difficulty,

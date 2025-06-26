@@ -205,9 +205,13 @@ export const notesAPI = {
 };
 
 export async function aiChat({ messages, question, language }) {
-  const res = await fetch('/api/ai/chat', {
+  const token = getAuthToken();
+  const res = await fetch(`${API_BASE_URL}/ai/chat`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 
+      'Content-Type': 'application/json',
+      ...(token && { Authorization: `Bearer ${token}` })
+    },
     body: JSON.stringify({ messages, question, language })
   });
   if (!res.ok) throw new Error('AI chat failed');
@@ -215,9 +219,13 @@ export async function aiChat({ messages, question, language }) {
 }
 
 export async function parseQuestionContent(content) {
-  const res = await fetch('/api/ai/parse-question', {
+  const token = getAuthToken();
+  const res = await fetch(`${API_BASE_URL}/ai/parse-question`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 
+      'Content-Type': 'application/json',
+      ...(token && { Authorization: `Bearer ${token}` })
+    },
     body: JSON.stringify({ content })
   });
   if (!res.ok) throw new Error('Question parsing failed');
