@@ -1,50 +1,81 @@
-# 🧠 DSA Question Manager
+# AlgoSync
 
-A personalized, AI-assisted web application to manage, organize, and solve Data Structures & Algorithms questions from platforms like LeetCode, GeeksforGeeks, and Codeforces.
+A comprehensive platform for managing and solving coding problems with chatbot assistance. AlgoSync helps you organize your DSA practice, track your progress, and get intelligent coding assistance through an integrated AI chatbot.
 
-> Built with MERN Stack, TailwindCSS, Framer Motion, and integrated with Google Gemini AI.
+## 🚀 Live Demo
 
----
+- **Frontend**: [https://algosyncv1.vercel.app](https://algosyncv1.vercel.app)
+- **Backend API**: [https://algosync-backend-production.up.railway.app](https://algosync-nine.vercel.app)
 
-## 🚀 Features
+## ✨ Features
 
-- 🔐 **Authentication** – JWT-based login/signup with account management (update profile, password, avatar)
-- 🧮 **Dashboard** – View total and solved questions, filter by difficulty and topic
-- 🗃️ **Organized Topics** – Questions grouped by DSA topics like Array, Graph, DP, etc.
-- 📌 **Question Bar View** – Horizontal bar for each question (title, links, star, solved checkbox)
-- 🧾 **Detailed View Panel** – Slide-in panel showing full question, constraints, examples
-- 🤖 **AI Chatbot** – Gemini-powered left-panel chatbot to generate code and explain logic
-- 💾 **Save Code** – Save AI-generated or custom code for each question
-- ⬇️ **Add Question Page** – Paste full problem text and auto-parse title, description, tags, etc.
-- 🧠 **Smart Tagging** – Auto-detect DSA tags from pasted content using BeautifulSoup backend
-- 🌐 **Chrome Extension** – Auto-import questions directly from LeetCode/GFG/Codeforces
+### 📚 Question Management
+- **Smart Question Parsing**: Paste question content and automatically extract title, description, difficulty, examples, constraints, and tags
+- **Platform Integration**: Automatic LeetCode URL generation 
+- **Progress Tracking**: Mark questions as solved, important
+- **Code Storage**: Save and manage your solutions for each question
+- **Statistics Dashboard**: Track your progress 
 
----
+### 🤖 AI-Powered Assistant
+- **Intelligent Chatbot**: Get help with coding problems using Gemini AI
+- **Context-Aware Responses**: AI understands the current question context
+- **Code Generation**: Generate solutions in multiple programming languages
+- **Conversational Interface**: Natural language interaction for coding help
+- **Code Saving**: You can directly save AI-generated code to your question
 
-## 🧱 Tech Stack
+### 📝 Notes System
+- **Organized Notes**: Create and manage study notes 
+- **Pin Important Notes**: Pin frequently used notes for quick access
+- **Search Functionality**: Find notes quickly with search capabilities
 
-| Layer | Tech |
-|-------|------|
-| Frontend | React, TailwindCSS, Framer Motion |
-| Backend | Node.js, Express.js |
-| Database | MongoDB (Mongoose) |
-| Authentication | JWT |
-| AI | Google Gemini API |
-| Chrome Extension | JavaScript (DOM scraping) |
-| Parser | Python (BeautifulSoup for parsing question content) |
+### 🔐 User Management
+- **Secure Authentication**: JWT-based authentication system
+- **User Profiles**: Manage your profile and preferences
+- **Progress Sync**: Your data syncs across devices
 
----
+## 🛠️ Tech Stack
 
-## 📸 Screenshots
+### Frontend
+- **Framework**: React 18 with TypeScript
+- **Build Tool**: Vite
+- **Styling**: Tailwind CSS with custom glass morphism design
+- **UI Components**: Radix UI + shadcn/ui
+- **State Management**: React Context + React Query
+- **Routing**: React Router DOM
+- **Forms**: React Hook Form with Zod validation
+- **Animations**: Framer Motion
+- **Markdown**: React Markdown with syntax highlighting
 
-> Coming soon (or add actual UI shots here)
+### Backend
+- **Runtime**: Node.js 18+
+- **Framework**: Express.js
+- **Database**: MongoDB with Mongoose ODM
+- **Authentication**: JWT with bcryptjs
+- **AI Integration**: Google Gemini AI API
+- **CORS**: Cross-origin resource sharing
+- **Validation**: Custom middleware validation
 
----
+### Deployment
+- **Frontend**: Vercel
+- **Backend**: Railway
+- **Database**: MongoDB Atlas
 
-## 📂 Folder Structure
+## 🚀 Quick Start
 
-```bash
-/client         # React frontend
-/server         # Express backend
-/extension      # Chrome extension code
-/parser         # Python microservice for parsing
+### Prerequisites
+- Node.js 18+
+- MongoDB database
+- Google Gemini AI API key
+
+## 🚀 Deployment
+
+### Backend (Railway)
+1. Connect your GitHub repository to Railway
+2. Set environment variables in Railway dashboard
+3. Deploy automatically on push
+
+### Frontend (Vercel)
+1. Connect your GitHub repository to Vercel
+2. Set environment variable: `VITE_API_URL`
+3. Deploy automatically on push
+
