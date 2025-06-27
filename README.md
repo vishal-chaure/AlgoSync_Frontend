@@ -5,7 +5,7 @@ A comprehensive platform for managing and solving coding problems with chatbot a
 ## 🚀 Live Demo
 
 - **Frontend**: [https://algosyncv1.vercel.app](https://algosyncv1.vercel.app)
-- **Backend API**: [https://algosync-backend-production.up.railway.app](https://algosync-nine.vercel.app)
+- **Backend API**: [https://algosync-backend-production.up.railway.app](https://algosync-backend-production.up.railway.app)
 
 ## ✨ Features
 
