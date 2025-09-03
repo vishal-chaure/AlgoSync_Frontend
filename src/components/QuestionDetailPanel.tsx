@@ -17,6 +17,12 @@ const QuestionDetailPanel = ({ question, onClose, onShowChatbot, onQuestionDelet
   const [showSavedCode, setShowSavedCode] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  const openInCodeEditor = () => {
+    const token = localStorage.getItem("token"); // or wherever your token is stored
+    const url = `http://localhost:8081/?question_id=${question.id}&token=${token}`;
+    window.open(url, "_blank");
+  };
+
   const handleDelete = async () => {
     if (!confirm('Are you sure you want to delete this question? This action cannot be undone.')) {
       return;
@@ -135,6 +141,13 @@ const QuestionDetailPanel = ({ question, onClose, onShowChatbot, onQuestionDelet
             >
               <Code size={14} className="mr-1" />
               AlgoSync AI
+            </Button>
+            <Button
+              onClick={openInCodeEditor}
+              className="glass-strong hover:glass-light text-white flex items-center text-sm px-3 py-2 w-full sm:w-auto"
+            >
+              <Code size={14} className="mr-1" />
+              Code Editor
             </Button>
           </div>
 

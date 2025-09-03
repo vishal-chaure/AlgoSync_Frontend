@@ -8,7 +8,7 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
     proxy: {
-      '/api': 'http://algosyncbackend-production.up.railway.app',
+      '/api': 'http://algosyncbackend-dev.up.railway.app',
     },
   },
   plugins: [
