@@ -13,7 +13,7 @@ interface QuestionDetailPanelProps {
   onQuestionDeleted?: (questionId: string) => void;
 }
 
-const CODE_EDITOR_URL = import.meta.env.CODE_EDITOR_URL
+const CODE_EDITOR_URL = "https://algoeditor.vercel.app";
 
 const QuestionDetailPanel = ({ question, onClose, onShowChatbot, onQuestionDeleted }: QuestionDetailPanelProps) => {
   const [showSavedCode, setShowSavedCode] = useState(false);
@@ -21,7 +21,7 @@ const QuestionDetailPanel = ({ question, onClose, onShowChatbot, onQuestionDelet
 
   const openInCodeEditor = () => {
     const token = localStorage.getItem("token"); // or wherever your token is stored
-    const url = `http://localhost:8080/?question_id=${question.id}&token=${token}`;
+    const url = `${CODE_EDITOR_URL}/?question_id=${question.id}&token=${token}`;
     window.open(url, "_blank");
   };
 
