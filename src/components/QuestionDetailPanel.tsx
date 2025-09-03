@@ -13,13 +13,15 @@ interface QuestionDetailPanelProps {
   onQuestionDeleted?: (questionId: string) => void;
 }
 
+const CODE_EDITOR_URL = import.meta.env.CODE_EDITOR_URL
+
 const QuestionDetailPanel = ({ question, onClose, onShowChatbot, onQuestionDeleted }: QuestionDetailPanelProps) => {
   const [showSavedCode, setShowSavedCode] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
   const openInCodeEditor = () => {
     const token = localStorage.getItem("token"); // or wherever your token is stored
-    const url = `http://localhost:8081/?question_id=${question.id}&token=${token}`;
+    const url = `${CODE_EDITOR_URL}/?question_id=${question.id}&token=${token}`;
     window.open(url, "_blank");
   };
 
