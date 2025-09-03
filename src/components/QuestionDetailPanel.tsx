@@ -21,7 +21,7 @@ const QuestionDetailPanel = ({ question, onClose, onShowChatbot, onQuestionDelet
 
   const openInCodeEditor = () => {
     const token = localStorage.getItem("token"); // or wherever your token is stored
-    const url = `${CODE_EDITOR_URL}/?question_id=${question.id}&token=${token}`;
+    const url = `http://localhost:8080/?question_id=${question.id}&token=${token}`;
     window.open(url, "_blank");
   };
 
